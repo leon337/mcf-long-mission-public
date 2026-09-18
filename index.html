@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MCF Mission Control — Live</title>
+<style>
+:root{--bg:#08111f;--panel:#0d192a;--panel2:#101f34;--line:#223754;--text:#eaf2ff;--muted:#8fa6c4;--accent:#62a8ff;--ok:#45d483;--warn:#f3bd5b;--bad:#ff6b78}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 20% 0,#132846 0,#08111f 38%,#050b14 100%);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+a{color:#9bc8ff}.wrap{max-width:1280px;margin:auto;padding:28px}.hero{border:1px solid var(--line);background:linear-gradient(135deg,rgba(16,31,52,.96),rgba(8,17,31,.96));border-radius:24px;padding:28px;box-shadow:0 20px 70px #0007}
+.eyebrow{color:var(--accent);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:11px}h1{margin:.3rem 0 .6rem;font-size:34px;line-height:1.1}.sub{color:var(--muted);max-width:900px}
+.livebar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:20px}.metric{background:#091525;border:1px solid var(--line);border-radius:16px;padding:14px}.metric span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}.metric b{display:block;font-size:18px;margin-top:4px;word-break:break-word}
+.statusline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;color:var(--muted)}.dot{width:9px;height:9px;border-radius:50%;background:var(--warn);box-shadow:0 0 12px currentColor}.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.controls button{border:1px solid var(--line);background:#0b1727;color:#dfeeff;border-radius:10px;padding:9px 12px;cursor:pointer}.controls button:hover{border-color:#4c8edb}
+section{margin-top:22px}.section-title{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:10px}h2{font-size:20px;margin:0}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:18px}.card h3{margin:0 0 4px;font-size:18px}.role{color:var(--muted);margin-bottom:10px}.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.04em}.badge.ok{background:#123b2a;color:#8cf0b3;border:1px solid #236744}.badge.warn{background:#4b3512;color:#ffd988;border:1px solid #76531a}
+.finding{padding:13px 0;border-top:1px solid #1e3049}.finding:first-child{border-top:0}.finding p{margin:6px 0;color:#c7d6ea}.receipt{word-break:break-all;color:#7892b3;font-family:ui-monospace,monospace;font-size:11px;margin-top:12px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;background:var(--panel)}table{border-collapse:collapse;width:100%;min-width:720px}th,td{text-align:left;padding:11px 12px;border-bottom:1px solid #1d3049;vertical-align:top}th{color:#9fb4d1;background:#0b1727;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.timeline{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}.event{display:flex;gap:12px;padding:9px 0;color:#c7d6ea}.event .dot{margin-top:5px;background:var(--accent)}
+.notice{border:1px solid #664d1d;background:#35280f;color:#f7d88e;border-radius:16px;padding:14px 16px}.footer{color:#7088a8;font-size:12px;text-align:center;padding:28px 0 8px}
+code{color:#cbe0ff;background:#07101c;padding:.16rem .35rem;border-radius:6px}
+@media(max-width:900px){.livebar{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:1fr}}@media(max-width:520px){.wrap{padding:14px}.livebar{grid-template-columns:1fr}h1{font-size:26px}}
+</style>
+</head>
+<body><main class="wrap">
+<header class="hero">
+<div class="eyebrow">MCF · Mission Control · Auto Sync GitHub → Vercel</div>
+<h1>Missão longa: auditoria visível do MCF</h1>
+<p class="sub">Painel com dados live do repositório <b>leon337/multiagent-collaboration-framework</b>. O navegador reconcilia GitHub automaticamente a cada 60 segundos; mudanças no código deste painel são publicadas pelo Git Integration da Vercel.</p>
+<div class="livebar">
+<div class="metric"><span>Main live</span><b id="mainSha">carregando…</b></div>
+<div class="metric"><span>Latest release</span><b id="releaseTag">carregando…</b></div>
+<div class="metric"><span>PRs abertos</span><b id="openPRs">—</b></div>
+<div class="metric"><span>Issues abertas</span><b id="openIssues">—</b></div>
+<div class="metric"><span>Última sincronização</span><b id="lastSync">—</b></div>
+</div>
+<div class="statusline"><span id="syncDot" class="dot"></span><strong id="syncState">Sincronizando com GitHub…</strong><span id="rateInfo"></span></div>
+<div class="controls"><button id="refreshBtn" type="button">Atualizar agora</button><button id="pauseBtn" type="button">Pausar auto-sync</button><a href="https://github.com/leon337/multiagent-collaboration-framework" target="_blank" rel="noreferrer">Abrir repositório</a></div>
+</header>
+
+<section>
+<div class="section-title"><h2>Agentes e entregas da demonstração</h2><span class="badge ok">RUNTIME DEMO PASS</span></div>
+<div class="cards">
+<article class="card"><h3>Sofia</h3><div class="role">Arquitetura de Software · PID 535</div><span class="badge ok">PASS_WITH_OBSERVATIONS</span><div class="finding"><strong>Release e main desacoplados</strong><p>O painel agora mede esse fato live em vez de congelar SHAs no HTML.</p></div><div class="finding"><strong>Boundary de produção separado</strong><p>Release e avanço de main não são tratados como autorização de produção.</p></div><div class="receipt">receipt 4c2d1d004c9e83d1745a6e5e4f3154c9b204d0601800b5669ab81f586d699612</div></article>
+<article class="card"><h3>Beatriz</h3><div class="role">Avaliação de Agentes · PID 545</div><span class="badge ok">PASS_WITH_LIMITATION</span><div class="finding"><strong>Guarda contra falso positivo</strong><p>Busca incompleta nunca vira “prova de ausência”. Claims live agora mostram origem GitHub REST.</p></div><div class="finding"><strong>Separação de evidência</strong><p>PIDs separados provam isolamento de processo; não provam cognição LLM independente.</p></div><div class="receipt">receipt a0f8bc3dedd887b2b40e550d4a3b1dfa3c8102ed445d602240780aabcac48dee</div></article>
+<article class="card"><h3>Emily</h3><div class="role">Auditoria Independente · PID 555</div><span class="badge ok">ACCEPTED_FOR_RUNTIME_ORCHESTRATION_DEMO</span><div class="finding"><strong>Non-claim preservado</strong><p>A missão prova dispatch, processo, especialização determinística e receipts; não três LLMs independentes.</p></div><div class="finding"><strong>Atualização automática</strong><p>O novo mecanismo reduz drift dos indicadores voláteis exibidos no topo.</p></div><div class="receipt">receipt eeb1929de2ce08b14e364764fcf4489f49fd99dd1cf299fbb0d442821a991fe2</div></article>
+</div>
+</section>
+
+<section><div class="section-title"><h2>GitHub live — itens recentes</h2><span id="apiStatus" class="badge warn">aguardando</span></div>
+<div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Número</th><th>Título</th><th>Atualizado</th></tr></thead><tbody id="recentRows"><tr><td colspan="4">Carregando…</td></tr></tbody></table></div></section>
+
+<section><div class="section-title"><h2>Linha do tempo da automação</h2></div><div class="timeline">
+<div class="event"><span class="dot"></span><div><b>GitHub muda</b><div>Push, merge, release, issue ou PR altera o estado observado.</div></div></div>
+<div class="event"><span class="dot"></span><div><b>Painel reconcilia live</b><div>REST API pública é consultada na abertura e a cada 60 segundos.</div></div></div>
+<div class="event"><span class="dot"></span><div><b>Código do painel muda</b><div>Commit no repositório do painel aciona Vercel Git Integration.</div></div></div>
+<div class="event"><span class="dot"></span><div><b>Vercel publica</b><div>Production Deployment mantém o alias público estável.</div></div></div>
+</div></section>
+
+<section><div class="notice"><b>Limite explícito:</b> este mecanismo atualiza fatos públicos do GitHub e o código do painel. Ele não transforma automaticamente documentos históricos em verdade atual, nem autoriza deploy de produção do runtime MCF.</div></section>
+<section><div class="card"><h2>Receipt da missão original</h2><p><code>5db450c52210ad227cc148b0c1d473dc225558f4fa55159984e8ccce5c14c4d1</code></p></div></section>
+<div class="footer">MCF Mission Control · auto-sync read-only · GitHub live + Vercel Git Integration</div>
+</main>
+<script>
+(() => {
+  const repo='leon337/multiagent-collaboration-framework';
+  const api='https://api.github.com/repos/'+repo;
+  const $=id=>document.getElementById(id);
+  let timer=null, paused=false, syncing=false;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const dt=s=>s?new Date(s).toLocaleString('pt-BR'):'—';
+  async function j(url){
+    const r=await fetch(url,{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
+    if(!r.ok) throw new Error('GitHub '+r.status);
+    return {data:await r.json(),remaining:r.headers.get('x-ratelimit-remaining')};
+  }
+  async function sync(){
+    if(syncing)return; syncing=true; $('syncState').textContent='Sincronizando com GitHub…'; $('syncDot').className='dot'; $('apiStatus').textContent='sync';
+    try{
+      const [branch,release,prs,issues]=await Promise.all([
+        j(api+'/branches/main?ts='+Date.now()),
+        j(api+'/releases/latest?ts='+Date.now()),
+        j(api+'/pulls?state=open&sort=updated&direction=desc&per_page=8&ts='+Date.now()),
+        j(api+'/issues?state=open&sort=updated&direction=desc&per_page=16&ts='+Date.now())
+      ]);
+      const pureIssues=issues.data.filter(x=>!x.pull_request);
+      $('mainSha').textContent=branch.data.commit.sha.slice(0,12)+'…';
+      $('releaseTag').textContent=release.data.tag_name||'sem release';
+      $('openPRs').textContent=prs.data.length+(prs.data.length===8?'+':'');
+      $('openIssues').textContent=pureIssues.length+(pureIssues.length===16?'+':'');
+      $('lastSync').textContent=new Date().toLocaleTimeString('pt-BR');
+      $('syncState').textContent='GitHub live sincronizado';
+      $('syncDot').className='dot ok'; $('apiStatus').className='badge ok'; $('apiStatus').textContent='LIVE';
+      $('rateInfo').textContent='rate remaining: '+(branch.remaining??'—');
+      const rows=[
+        ...prs.data.slice(0,5).map(x=>({t:'PR',n:x.number,title:x.title,u:x.updated_at,url:x.html_url})),
+        ...pureIssues.slice(0,5).map(x=>({t:'Issue',n:x.number,title:x.title,u:x.updated_at,url:x.html_url}))
+      ].sort((a,b)=>new Date(b.u)-new Date(a.u)).slice(0,8);
+      $('recentRows').innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.t)}</td><td><a target="_blank" rel="noreferrer" href="${esc(x.url)}">#${esc(x.n)}</a></td><td>${esc(x.title)}</td><td>${esc(dt(x.u))}</td></tr>`).join(''):'<tr><td colspan="4">Nenhum item aberto.</td></tr>';
+    }catch(e){
+      $('syncState').textContent='Falha de sincronização: '+e.message; $('syncDot').className='dot bad'; $('apiStatus').className='badge warn'; $('apiStatus').textContent='DEGRADED';
+    }finally{syncing=false}
+  }
+  $('refreshBtn').addEventListener('click',sync);
+  $('pauseBtn').addEventListener('click',()=>{paused=!paused;$('pauseBtn').textContent=paused?'Retomar auto-sync':'Pausar auto-sync';});
+  timer=setInterval(()=>{if(!paused)sync()},60000);
+  sync();
+})();
+</script>
+</body></html>
