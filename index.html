@@ -25,7 +25,7 @@ code{color:#cbe0ff;background:#07101c;padding:.16rem .35rem;border-radius:6px}
 <header class="hero">
 <div class="eyebrow">MCF · Mission Control · Auto Sync GitHub → Vercel</div>
 <h1>Missão longa: auditoria visível do MCF</h1>
-<p class="sub">Painel com dados live do repositório <b>leon337/multiagent-collaboration-framework</b>. O navegador reconcilia GitHub automaticamente a cada 5 minutos; mudanças no código deste painel são publicadas pelo Git Integration da Vercel.</p>
+<p class="sub">Painel com dados live do repositório <b>leon337/multiagent-collaboration-framework</b>. Mudanças relevantes no MCF disparam um Deploy Hook da Vercel; o build gera um snapshot novo. A página verifica esse snapshot a cada 30 segundos, sem consumir a API GitHub no navegador.</p>
 <div class="livebar">
 <div class="metric"><span>Main live</span><b id="mainSha">carregando…</b></div>
 <div class="metric"><span>Latest release</span><b id="releaseTag">carregando…</b></div>
@@ -51,7 +51,7 @@ code{color:#cbe0ff;background:#07101c;padding:.16rem .35rem;border-radius:6px}
 
 <section><div class="section-title"><h2>Linha do tempo da automação</h2></div><div class="timeline">
 <div class="event"><span class="dot"></span><div><b>GitHub muda</b><div>Push, merge, release, issue ou PR altera o estado observado.</div></div></div>
-<div class="event"><span class="dot"></span><div><b>Painel reconcilia live</b><div>REST API pública é consultada na abertura e a cada 5 minutos.</div></div></div>
+<div class="event"><span class="dot"></span><div><b>Painel reconcilia live</b><div>O snapshot é gerado no deploy orientado a evento e a página o verifica a cada 30 segundos.</div></div></div>
 <div class="event"><span class="dot"></span><div><b>Código do painel muda</b><div>Commit no repositório do painel aciona Vercel Git Integration.</div></div></div>
 <div class="event"><span class="dot"></span><div><b>Vercel publica</b><div>Production Deployment mantém o alias público estável.</div></div></div>
 </div></section>
@@ -60,50 +60,5 @@ code{color:#cbe0ff;background:#07101c;padding:.16rem .35rem;border-radius:6px}
 <section><div class="card"><h2>Receipt da missão original</h2><p><code>5db450c52210ad227cc148b0c1d473dc225558f4fa55159984e8ccce5c14c4d1</code></p></div></section>
 <div class="footer">MCF Mission Control · auto-sync read-only · GitHub live + Vercel Git Integration</div>
 </main>
-<script>
-(() => {
-  const repo='leon337/multiagent-collaboration-framework';
-  const api='https://api.github.com/repos/'+repo;
-  const $=id=>document.getElementById(id);
-  let timer=null, paused=false, syncing=false;
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const dt=s=>s?new Date(s).toLocaleString('pt-BR'):'—';
-  async function j(url){
-    const r=await fetch(url,{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
-    if(!r.ok) throw new Error('GitHub '+r.status);
-    return {data:await r.json(),remaining:r.headers.get('x-ratelimit-remaining')};
-  }
-  async function sync(){
-    if(syncing)return; syncing=true; $('syncState').textContent='Sincronizando com GitHub…'; $('syncDot').className='dot'; $('apiStatus').textContent='sync';
-    try{
-      const [branch,release,issues]=await Promise.all([
-        j(api+'/branches/main?ts='+Date.now()),
-        j(api+'/releases/latest?ts='+Date.now()),
-        j(api+'/issues?state=open&sort=updated&direction=desc&per_page=100&ts='+Date.now())
-      ]);
-      const pureIssues=issues.data.filter(x=>!x.pull_request);
-      const prs=issues.data.filter(x=>x.pull_request);
-      $('mainSha').textContent=branch.data.commit.sha.slice(0,12)+'…';
-      $('releaseTag').textContent=release.data.tag_name||'sem release';
-      $('openPRs').textContent=prs.length+(issues.data.length===100?'+':'');
-      $('openIssues').textContent=pureIssues.length+(issues.data.length===100?'+':'');
-      $('lastSync').textContent=new Date().toLocaleTimeString('pt-BR');
-      $('syncState').textContent='GitHub live sincronizado';
-      $('syncDot').className='dot ok'; $('apiStatus').className='badge ok'; $('apiStatus').textContent='LIVE';
-      $('rateInfo').textContent='rate remaining: '+(branch.remaining??'—');
-      const rows=[
-        ...prs.slice(0,5).map(x=>({t:'PR',n:x.number,title:x.title,u:x.updated_at,url:x.html_url})),
-        ...pureIssues.slice(0,5).map(x=>({t:'Issue',n:x.number,title:x.title,u:x.updated_at,url:x.html_url}))
-      ].sort((a,b)=>new Date(b.u)-new Date(a.u)).slice(0,8);
-      $('recentRows').innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.t)}</td><td><a target="_blank" rel="noreferrer" href="${esc(x.url)}">#${esc(x.n)}</a></td><td>${esc(x.title)}</td><td>${esc(dt(x.u))}</td></tr>`).join(''):'<tr><td colspan="4">Nenhum item aberto.</td></tr>';
-    }catch(e){
-      $('syncState').textContent='Falha de sincronização: '+e.message; $('syncDot').className='dot bad'; $('apiStatus').className='badge warn'; $('apiStatus').textContent='DEGRADED';
-    }finally{syncing=false}
-  }
-  $('refreshBtn').addEventListener('click',sync);
-  $('pauseBtn').addEventListener('click',()=>{paused=!paused;$('pauseBtn').textContent=paused?'Retomar auto-sync':'Pausar auto-sync';});
-  timer=setInterval(()=>{if(!paused)sync()},300000);
-  sync();
-})();
-</script>
+<script src="/client.js"></script>
 </body></html>
